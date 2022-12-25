@@ -3,13 +3,13 @@ package com.dotnesia.theincall;
 import androidx.annotation.NonNull;
 
 import io.flutter.embedding.engine.plugins.FlutterPlugin;
+import io.flutter.embedding.engine.plugins.activity.ActivityAware;
+import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding;
 import io.flutter.plugin.common.EventChannel;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler;
 import io.flutter.plugin.common.MethodChannel.Result;
-import io.flutter.plugin.common.PluginRegistry.Registrar;
-
 
 import android.app.Activity;
 import android.content.Context;
@@ -53,14 +53,15 @@ import com.dotnesia.theincall.AppRTC.AppRTCBluetoothManager;
 import com.dotnesia.theincall.utils.ConstraintsMap;
 
 /** TheincallPlugin */
-public class TheincallPlugin implements FlutterPlugin, MethodCallHandler {
+public class TheincallPlugin implements FlutterPlugin, MethodCallHandler, ActivityAware {
   /// The MethodChannel that will the communication between Flutter and native Android
   ///
   /// This local reference serves to register the plugin with the Flutter Engine and unregister it
   /// when the Flutter Engine is detached from the Activity
 
+  private Activity activity;
+  private Context context;
   private MethodChannel channel;
-  //private final MethodChannel channel;
 
   private FlutterPluginBinding defBinding;
 
@@ -119,6 +120,7 @@ public class TheincallPlugin implements FlutterPlugin, MethodCallHandler {
     this.defBinding = flutterPluginBinding;
     channel = new MethodChannel(flutterPluginBinding.getBinaryMessenger(), "theincall.Method");
     channel.setMethodCallHandler(this);
+    this.context = flutterPluginBinding.getApplicationContext();
   }
 
   @Override
@@ -126,37 +128,45 @@ public class TheincallPlugin implements FlutterPlugin, MethodCallHandler {
     channel.setMethodCallHandler(null);
   }
   
-  public void registerWith(Registrar registrar) {
-    this.registrar = registrar;
-    final MethodChannel channel = new MethodChannel(registrar.messenger(), "theincall.Method");
-    //channel.setMethodCallHandler(new TheincallPlugin(registrar, channel));
-    this.channel = channel;
-    channel.setMethodCallHandler(this);
+  @Override
+  public void onDetachedFromActivity() {
   }
 
-  public Registrar registrar() {
-    return this.registrar;
+  @Override
+  public void onReattachedToActivityForConfigChanges(@NonNull ActivityPluginBinding binding) {
+    onAttachedToActivity(binding);
   }
 
-  public Activity getActivity() {
-    return registrar.activity();
+  @Override
+  public void onAttachedToActivity(ActivityPluginBinding binding) {
+    this.activity = binding.getActivity();
   }
 
-  public Context getContext() {
-    return defBinding.getApplicationContext();
-    //return registrar.context();
-  }
+  @Override
+  public void onDetachedFromActivityForConfigChanges() {}
+
+//   public void registerWith(Registrar registrar) {
+//     this.registrar = registrar;
+//     final MethodChannel channel = new MethodChannel(registrar.messenger(), "theincall.Method");
+//     //channel.setMethodCallHandler(new TheincallPlugin(registrar, channel));
+//     this.channel = channel;
+//     channel.setMethodCallHandler(this);
+//   }
+
+//   public Registrar registrar() {
+//     return this.registrar;
+//   }
 
   //private TheincallPlugin(Registrar registrar, MethodChannel channel) {
   public TheincallPlugin() {
     //this.registrar = registrar;
     //this.channel = channel;
-    mWindowManager = (WindowManager) getContext().getSystemService(Context.WINDOW_SERVICE);
-    mPowerManager = (PowerManager) getContext().getSystemService(Context.POWER_SERVICE);
-    mPackageName = getContext().getPackageName();
-    mWindowManager = (WindowManager) getContext().getSystemService(Context.WINDOW_SERVICE);
-    mPowerManager = (PowerManager) getContext().getSystemService(Context.POWER_SERVICE);
-    audioManager = ((AudioManager) getContext().getSystemService(Context.AUDIO_SERVICE));
+    mWindowManager = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
+    mPowerManager = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
+    mPackageName = context.getPackageName();
+    mWindowManager = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
+    mPowerManager = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
+    audioManager = ((AudioManager) context.getSystemService(Context.AUDIO_SERVICE));
     audioUriMap = new HashMap<String, Uri>();
     audioUriMap.put("defaultRingtoneUri", defaultRingtoneUri);
     audioUriMap.put("defaultRingbackUri", defaultRingbackUri);
@@ -166,9 +176,9 @@ public class TheincallPlugin implements FlutterPlugin, MethodCallHandler {
     audioUriMap.put("bundleBusytoneUri", bundleBusytoneUri);
     mRequestPermissionCodeTargetPermission = new SparseArray<String>();
     mOnFocusChangeListener = new OnFocusChangeListener();
-    bluetoothManager = AppRTCBluetoothManager.create(getContext(), this);
-    proximityManager = InCallProximityManager.create(getContext(), this);
-    wakeLockUtils = new InCallWakeLockUtils(getContext());
+    bluetoothManager = AppRTCBluetoothManager.create(context, this);
+    proximityManager = InCallProximityManager.create(context, this);
+    wakeLockUtils = new InCallWakeLockUtils(context);
     //EventChannel eventChannel = new EventChannel(registrar.messenger(), "theincall.Event");
     EventChannel eventChannel = new EventChannel(defBinding.getBinaryMessenger(), "theincall.Event");
     eventChannel.setStreamHandler(streamHandler);
@@ -311,7 +321,7 @@ public class TheincallPlugin implements FlutterPlugin, MethodCallHandler {
         public void stopPlay();
     }
 
-    private Registrar registrar;
+    //private Registrar registrar;
     private EventChannel.EventSink eventSink = null;
 
     private EventChannel.StreamHandler streamHandler = new EventChannel.StreamHandler() {
@@ -383,7 +393,7 @@ public class TheincallPlugin implements FlutterPlugin, MethodCallHandler {
                     }
                 }
             };
-            Context reactContext = getContext();
+            Context reactContext = context;
             if (reactContext != null) {
                 reactContext.registerReceiver(wiredHeadsetReceiver, filter);
             } else {
@@ -420,7 +430,7 @@ public class TheincallPlugin implements FlutterPlugin, MethodCallHandler {
                     }
                 }
             };
-            Context reactContext = getContext();
+            Context reactContext = context;
             if (reactContext != null) {
                 reactContext.registerReceiver(noisyAudioReceiver, filter);
             } else {
@@ -490,7 +500,7 @@ public class TheincallPlugin implements FlutterPlugin, MethodCallHandler {
                     }
                 }
             };
-            Context reactContext = getContext();
+            Context reactContext = context;
             if (reactContext != null) {
                 reactContext.registerReceiver(mediaButtonReceiver, filter);
             } else {
@@ -1217,7 +1227,7 @@ public class TheincallPlugin implements FlutterPlugin, MethodCallHandler {
         if (type.equals("_BUNDLE_")) {
             if (audioUriMap.get(uriBundle) == null) {
                 int res = 0;
-                Context reactContext = getContext();
+                Context reactContext = context;
                 if (reactContext != null) {
                     res = reactContext.getResources().getIdentifier(fileBundle, "raw", mPackageName);
                 } else {
@@ -1438,7 +1448,7 @@ public class TheincallPlugin implements FlutterPlugin, MethodCallHandler {
                 int stream = (Integer) data.get("audioStream");
                 String name = (String) data.get("name");
 
-                Context reactContext = getContext();
+                Context reactContext = context;
                 setDataSource(reactContext, sourceUri);
                 setLooping(setLooping);
                 setAudioStreamType(stream); // is better using STREAM_DTMF for ToneGenerator?
@@ -1516,7 +1526,7 @@ public class TheincallPlugin implements FlutterPlugin, MethodCallHandler {
 
     private String _checkPermission(String targetPermission) {
         try {
-            Context reactContext = getContext();
+            Context reactContext = context;
             if (ContextCompat.checkSelfPermission(reactContext, targetPermission) == PackageManager.PERMISSION_GRANTED) {
                 return "granted";
             } else {
@@ -1728,14 +1738,14 @@ public class TheincallPlugin implements FlutterPlugin, MethodCallHandler {
      * Helper method for receiver registration.
      */
     private void registerReceiver(BroadcastReceiver receiver, IntentFilter filter) {
-        getContext().registerReceiver(receiver, filter);
+        context.registerReceiver(receiver, filter);
     }
 
     /**
      * Helper method for unregistration of an existing receiver.
      */
     private void unregisterReceiver(final BroadcastReceiver receiver) {
-        final Context reactContext = this.getContext();
+        final Context reactContext = this.context;
         if (reactContext != null) {
             try {
                 reactContext.unregisterReceiver(receiver);
@@ -1773,7 +1783,7 @@ public class TheincallPlugin implements FlutterPlugin, MethodCallHandler {
      * Gets the current earpiece state.
      */
     private boolean hasEarpiece() {
-        return getContext().getPackageManager().hasSystemFeature(PackageManager.FEATURE_TELEPHONY);
+        return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_TELEPHONY);
     }
 
     /**
