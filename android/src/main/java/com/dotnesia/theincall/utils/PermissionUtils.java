@@ -143,6 +143,7 @@ public class PermissionUtils {
                 fragment,
                 fragment.getClass().getName() + "-" + requestCode);
 
+
         try {
             transaction.commit();
         } catch (IllegalStateException ise) {
@@ -250,6 +251,7 @@ public class PermissionUtils {
 
             if (activity != null) {
                 activity.getFragmentManager().beginTransaction()
+                //activity.getParentFragmentManager().beginTransaction()
                     .remove(this)
                     .commitAllowingStateLoss();
             }

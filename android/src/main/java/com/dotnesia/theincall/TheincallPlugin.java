@@ -157,15 +157,26 @@ public class TheincallPlugin implements FlutterPlugin, MethodCallHandler, Activi
 //     return this.registrar;
 //   }
 
+  public Context getContext() {
+    return this.context;
+  }
+
+  public Activity getActivity() {
+    return this.activity;
+  }
+
   //private TheincallPlugin(Registrar registrar, MethodChannel channel) {
   public TheincallPlugin() {
     //this.registrar = registrar;
     //this.channel = channel;
-    mWindowManager = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
-    mPowerManager = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
+
     mPackageName = context.getPackageName();
+
     mWindowManager = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
+    //window manager ini null getservicenya
+    
     mPowerManager = (PowerManager) context.getSystemService(Context.POWER_SERVICE);
+    
     audioManager = ((AudioManager) context.getSystemService(Context.AUDIO_SERVICE));
     audioUriMap = new HashMap<String, Uri>();
     audioUriMap.put("defaultRingtoneUri", defaultRingtoneUri);
@@ -365,7 +376,7 @@ public class TheincallPlugin implements FlutterPlugin, MethodCallHandler, Activi
             IntentFilter filter = new IntentFilter(ACTION_HEADSET_PLUG);
             wiredHeadsetReceiver = new BroadcastReceiver() {
                 @Override
-                public void onReceive(Context context, Intent intent) {
+                public void onReceive(Context ctx, Intent intent) {
                     if (ACTION_HEADSET_PLUG.equals(intent.getAction())) {
             boolean wiredHeadsetEnabled = true;
             // when we have state, and this is 0, means no real headset, so, we cant offer a headset
@@ -416,7 +427,7 @@ public class TheincallPlugin implements FlutterPlugin, MethodCallHandler, Activi
             IntentFilter filter = new IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY);
             noisyAudioReceiver = new BroadcastReceiver() {
                 @Override
-                public void onReceive(Context context, Intent intent) {
+                public void onReceive(Context ctx, Intent intent) {
                     if (AudioManager.ACTION_AUDIO_BECOMING_NOISY.equals(intent.getAction())) {
                         updateAudioRoute();
                         //sendEvent("NoisyAudio", null);
@@ -453,7 +464,7 @@ public class TheincallPlugin implements FlutterPlugin, MethodCallHandler, Activi
             IntentFilter filter = new IntentFilter(Intent.ACTION_MEDIA_BUTTON);
             mediaButtonReceiver = new BroadcastReceiver() {
                 @Override
-                public void onReceive(Context context, Intent intent) {
+                public void onReceive(Context ctx, Intent intent) {
                     if (Intent.ACTION_MEDIA_BUTTON.equals(intent.getAction())) {
                         KeyEvent event = (KeyEvent) intent.getParcelableExtra(Intent.EXTRA_KEY_EVENT);
                         int keyCode = event.getKeyCode();
